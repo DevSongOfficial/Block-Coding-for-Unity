@@ -3,7 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-
 interface ISelectable
 {
     void GetSelected();
@@ -14,15 +13,15 @@ public class GameManager : MonoBehaviour
     private static GameManager instance;
     public static GameManager Instance { get { return instance; } }
 
-    public static bool InProgress { get; private set; } // return if the game has started
+    public static bool InProgress { get; private set; } // Return if the game has started.
 
     // Custom Events
     public event EventHandler<Target> OnTargetObjectSelected;
     public event EventHandler<Target> OnNewTargetObjectCreated;
     public event EventHandler<Target> OnTargetObjectRemoved;
 
-    public static Target CurrentTarget { get; private set; } // 현재 선택된 TargetObject
-    public static Target PreviousTarget { get; private set; } 
+    public static Target CurrentTarget { get; private set; } // TargetObject currently being selected.
+    public static Target PreviousTarget { get; private set; }
     public void SetCurrentTarget(Target targetObject)
     {
         PreviousTarget = CurrentTarget;
@@ -32,7 +31,7 @@ public class GameManager : MonoBehaviour
             PreviousTarget.RemoveOutline();
         }
 
-        CurrentTarget = targetObject.GetComponent<Target>();
+        CurrentTarget = targetObject;
         CurrentTarget.GetComponent<ISelectable>().GetSelected();
 
         targetObject.AddOutline();
@@ -58,7 +57,7 @@ public class GameManager : MonoBehaviour
         spherePrefab = Resources.Load<Target>("Prefabs/Target_Sphere");
         cylinderPrefab = Resources.Load<Target>("Prefabs/Target_Cylinder");
 
-        Screen.SetResolution(1280, 720, true);
+        Screen.SetResolution(1280, 720, false);
     }
 
     private void Start()
@@ -103,7 +102,7 @@ public class GameManager : MonoBehaviour
                 }
             }
         }
-        
+
         if (canConnect)
         {
             Block.draggedBlock.HighlighteOn(new Color(1, 0.85f, 0, 1));
@@ -113,17 +112,34 @@ public class GameManager : MonoBehaviour
     }
 
     // Start The Game
-    // Default Event Block 모두 실행 => Scratch의 초록 깃발 버튼과 동일 기능
-    [ContextMenu("StartGame")]
+    // By implementing every DefaultEventBlock's event
+    [ContextMenu("Start The Game")]
     public void GameStart()
     {
         InProgress = true;
 
+        foreach (Target target in EveryTargetInTheScene)
+        {
+            target.UpdateTransformBeforEventStarted();
+        }
+
         PanelManager.Instance.ActivateAllBlockPanels();
 
-        for(int i = 0; i < DefaultEventBlock.defaultEventBlocks.Count; i++)
+        for (int i = 0; i < DefaultEventBlock.defaultEventBlocks.Count; i++)
         {
             DefaultEventBlock.defaultEventBlocks[i].StartEvent();
+        }
+    }
+
+    [ContextMenu("Stop The Game")]
+    // Stop the game and initialize the targets in the scene
+    public void GameStop()
+    {
+        InProgress = false; // Loop Block and Wait Block would be stopped by the variable.
+
+        foreach (Target target in EveryTargetInTheScene)
+        {
+            target.RevertToTrasnformBeforeEventStarted();
         }
     }
 

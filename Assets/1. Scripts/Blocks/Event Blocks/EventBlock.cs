@@ -34,6 +34,11 @@ public abstract class EventBlock : ParentBlock
         StartCoroutine(EventCoroutine);
     }
 
+    public void StopEvent()
+    {
+        StopCoroutine(EventCoroutine);
+    }
+
     public override void BottomConnect(Block block)
     {
         base.BottomConnect(block);
@@ -48,8 +53,6 @@ public abstract class EventBlock : ParentBlock
             var childBlock = childBlocks[i];
 
             yield return StartCoroutine(MoveOnToNextBlock(childBlock));
-
-            yield return new WaitForSecondsRealtime(EXCUTION_DELAY);
         }
     }
 

@@ -13,11 +13,25 @@ public sealed class WaitActionBlock : ActionBlock
         base.Awake();
 
         inputField = transform.Find("InputField").GetComponent<TMP_InputField>();
-        inputField.onValueChanged.AddListener(delegate (string value) { float.TryParse(value, out time); });
+        inputField.onValueChanged.AddListener((string value) => { float.TryParse(value, out time); });
     }
 
+    float timer;
     public override IEnumerator DoFunction()
     {
-        yield return new WaitForSeconds(time);
+        timer = 0;
+
+        while (GameManager.InProgress)
+        {
+            if (timer >= time)
+            {
+                yield break;
+            }
+            else
+            {
+                timer += Time.deltaTime;
+                yield return null;
+            }
+        }
     }
 }

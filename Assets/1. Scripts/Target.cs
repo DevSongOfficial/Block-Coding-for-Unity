@@ -26,6 +26,26 @@ public class Target : MonoBehaviour, ISelectable
     // Custom events
     public event EventHandler OnTargetNameChanged;
     public event EventHandler<Target> OnCollisionEnterBetween;
+    
+    Transform transformBeforEventStarted;
+    public struct Transform
+    {
+        public Vector3 position;
+        public Quaternion rotation;
+        public Vector3 scale;
+    }
+    public void UpdateTransformBeforEventStarted()
+    {
+        transformBeforEventStarted.position = transform.position;
+        transformBeforEventStarted.rotation = transform.rotation;
+        transformBeforEventStarted.scale = transform.localScale;
+    }
+    public void RevertToTrasnformBeforeEventStarted()
+    {
+        transform.position = transformBeforEventStarted.position;
+        transform.rotation = transformBeforEventStarted.rotation;
+        transform.localScale = transformBeforEventStarted.scale;
+    }
 
     private void Awake()
     {

@@ -10,6 +10,7 @@ public abstract class Block : MonoBehaviour, IDragHandler, IBeginDragHandler, IE
 {
     // 코드블록을 통해 제어할 타겟 오브젝트
     // 모든 블록은 하나의 타겟 오브젝트를 할당받고, 그 타겟 오브젝트를 기반으로 동작함
+    // Every block in the scene has it's own target object, and work based on it.
     public Target Target { get; private set; }  
     public virtual void SetTarget(Target target)
     {
@@ -27,17 +28,19 @@ public abstract class Block : MonoBehaviour, IDragHandler, IBeginDragHandler, IE
 
     public static List<Block> AllBlocksInTheScene = new List<Block>();
 
-    [HideInInspector] public ParentBlock parentBlock;
-    [HideInInspector] public Block topConnectedBlock;
-    [HideInInspector] public Block bottomConnectedBlock;
+    [Header("[Do not assign anything in the inspector]", order = 0)]
+    [Header("Block Information")]
+    public ParentBlock parentBlock;
+    public Block topConnectedBlock;
+    public Block bottomConnectedBlock;
 
     // true일 경우 parent블록이 이 블록을 무시하고 다음 블록으로 넘어감
     // Break블록을 통해 Loop블록을 탈출할 때만 사용
     private bool neglected = false; 
     
-    protected RectTransform topConnectedBlockArea;    // UI를 이 영역의 좌표 내에 드랍했을 때 위로 붙는다고 인식함
-    protected RectTransform bottomConnectedBlockArea; // UI를 이 영역의 좌표 내에 드랍했을 때 아래로 붙는다고 인식함
-    protected RectTransform connectionRecognitionArea;
+    protected RectTransform topConnectedBlockArea;     // UI를 이 영역의 좌표 내에 드랍했을 때 위로 붙는다고 인식함
+    protected RectTransform bottomConnectedBlockArea;  // UI를 이 영역의 좌표 내에 드랍했을 때 아래로 붙는다고 인식함
+    protected RectTransform connectionRecognitionArea; // 이 영역이 위 두 영역과 겹치면 연결 가능하다고 인식함
 
     private Vector2 previousAnchoredPosition;
 
@@ -63,12 +66,10 @@ public abstract class Block : MonoBehaviour, IDragHandler, IBeginDragHandler, IE
 
 
     // Custom Events
-    public static event EventHandler Event_OnDragEnd;
+    public static event EventHandler OnDragEnd;
 
     public static bool isDragging;
     public static Block draggedBlock;
-
-    public static readonly float EXCUTION_DELAY = 0.01f;
 
     [HideInInspector] public Outline outline;
 
@@ -87,11 +88,11 @@ public abstract class Block : MonoBehaviour, IDragHandler, IBeginDragHandler, IE
         bottomConnectedBlockArea = transform.Find("BottomConnectedArea").GetComponent<RectTransform>();
         connectionRecognitionArea = transform.Find("BlockRecognitionArea").GetComponent<RectTransform>();
 
-        Event_OnDragEnd += OnDragEnd;
+        OnDragEnd += CheckAndTryConnection;
     }
 
-    // 모든 블록 초기화
-    // ! 주의 ! 이 함수는 Awake 이후에 실행되어야 함
+    // Every block must be initialized by this function.
+    // Notice: This fucntion have to be called after Awake().
     public static void InitializeAllBlocksInTheScene()
     {
         for (int i = 0; i < AllBlocksInTheScene.Count; i++)
@@ -105,13 +106,10 @@ public abstract class Block : MonoBehaviour, IDragHandler, IBeginDragHandler, IE
 
     protected virtual void Update()
     {
-        if(OnTheLogicPanel() && draggedBlock != null && draggedBlock != this)
-        {
-            //print("bottomConnectedArea: " + bottomConnectedBlockArea.position);
-        }
+
     }
 
-    // this의 윗쪽에 block이 connected된 경우
+    // This function will be called when dragged block dropped on the top-connected-area of this block.
     public void TopConnect(Block block)
     {
         if (HasParentBlock() && block.IsEventBlock()) return;
@@ -151,7 +149,7 @@ public abstract class Block : MonoBehaviour, IDragHandler, IBeginDragHandler, IE
     }
 
 
-    // this의 아래쪽에 block이 connected된 경우
+    // This function will be called when dragged block dropped on the bottom-connected-area of this block.
     public virtual void BottomConnect(Block block)
     {
         // 마우스 커서가 블록의 움직임보다 더 빨라졌을 때 자식 블록에 Connected처리됨을 방지
@@ -190,7 +188,7 @@ public abstract class Block : MonoBehaviour, IDragHandler, IBeginDragHandler, IE
         block.AsParentBlock()?.MoveChildBlocks(block.DeltaPosition());
     }
 
-    // this가 disconnected된 경우
+    // This function will be called when you start dragging a block except event block.
     public void Disconnect()
     {
         if(IsBottomConnected())
@@ -220,62 +218,49 @@ public abstract class Block : MonoBehaviour, IDragHandler, IBeginDragHandler, IE
         parentBlock?.RemoveChildBlock(this);
     }
 
-    // draggedBlock이 this 위에 Drop됐는지 확인
-    public void OnDragEnd(object sender, EventArgs eventArgs)
+    // Check if draggedBlock dropped on one of the connection areas of this block.
+    public void CheckAndTryConnection(object sender, EventArgs eventArgs)
     {
         if (CanConnectToDraggedBlock() == false) return;
 
-        if (DraggedBlockOnTheArea(topConnectedBlockArea) && IsTopConnected() == false)
+        if (DraggedBlockOnTheArea(topConnectedBlockArea))
         {
-            if (IsEventBlock()) return;
-
             TopConnect(draggedBlock);
         }
         else if (DraggedBlockOnTheArea(bottomConnectedBlockArea))
         {
-            if(draggedBlock.IsEventBlock()) return;
-
             BottomConnect(draggedBlock);
         }
         else 
         {
-            if (draggedBlock.IsEventBlock()) return;
-
-            switch (blockType) // Middle Connect 제어
+            switch (blockType) // Check middle connection.
             {
                 case BlockType.LoopBlock:
-                    var loopBlock = this.AsParentBlock();
-                    if (DraggedBlockOnTheArea(loopBlock.middleConnectedBlockArea))
-                    {
-                        loopBlock.TryMiddleConnect(draggedBlock); // child가 하나도 없는 상태이면 MiddleConnect
-                    }                                             // 그렇지 않으면 그 child 위에 붙인 후 함께 확장
+                    AsParentBlock().TryMiddleConnect(draggedBlock);
                     break;
                 case BlockType.ConditionalBlock:
-                    var conditionalBlock = this.AsParentBlock();
-                    if (DraggedBlockOnTheArea(conditionalBlock.middleConnectedBlockArea))
-                    {
-                        conditionalBlock.TryMiddleConnect(draggedBlock); 
-                    }
+                    AsParentBlock().TryMiddleConnect(draggedBlock);
                     break;
             }
         }
     }
 
+    // Check if draggedBlock is hovering over one of the connection areas of this block.
     public bool CanConnectToDraggedBlock()
     {
         if (draggedBlock == null) return false;
 
-        // Scroll View 내의 contents는 좌표계가 Canvas와 다르므로 LogicPanel의 블록이 BlockPanel의 블록에 Connect됨을 방지
         if (draggedBlock == this) return false;
+
+        if (draggedBlock.IsTopConnected() || draggedBlock.IsBottomConnected()) return false;
 
         // 서로 다른 패널의 블록들이 Connect됨을 방지
         if (OnTheBlockPanel()) return false;
 
         // draggedBlock이 자식 block과 Connect됨을 방지
-        if (draggedBlock.IsParentBlock())
+        if (draggedBlock.IsParentBlock() || draggedBlock.IsEventBlock())
         {
-            FindHighestParentBlock(out ParentBlock block);
-            if (block == draggedBlock) return false;
+            if (draggedBlock.AsParentBlock().Contains(this)) return false;
         }
 
         // 서로 다른 MainPanel의 블록끼리의 Connect됨을 방지
@@ -296,30 +281,22 @@ public abstract class Block : MonoBehaviour, IDragHandler, IBeginDragHandler, IE
         else
         {
             if (draggedBlock.IsEventBlock()) return false;
-
+            if (IsParentBlock() == false) return false;
+            if (DraggedBlockOnTheArea(AsParentBlock().middleConnectedBlockArea) == false) return false;
+            if (AsParentBlock().HasChildBlock()) return false;  // child가 하나도 없는 상태이면 MiddleConnect, 그렇지 않으면 그 child 위에 붙인 후 함께 확장
             switch (blockType) 
             {
                 case BlockType.LoopBlock:
-                    var loopBlock = this.AsParentBlock();
-                    if (DraggedBlockOnTheArea(loopBlock.middleConnectedBlockArea))
-                    {
-                        if(loopBlock.HasChildBlock() == false) return true;
-                    }                                             
-                    break;
+                    return true;                                                     
                 case BlockType.ConditionalBlock:
-                    var conditionalBlock = this.AsParentBlock();
-                    if (DraggedBlockOnTheArea(conditionalBlock.middleConnectedBlockArea))
-                    {
-                        if (conditionalBlock.HasChildBlock() == false) return true;
-                    }
-                    break;
+                    return true;
             }
         }
 
         return false;
     }
 
-    // ! 주의! PushDownBy 함수는 block을 먼저 배치 한 후에 실행시켜야함 
+    // Notice: PushDownBy 함수는 block을 먼저 배치 한 후에 실행시켜야함 
     public void PushDownBy(Block block, bool isRecursive = true) // block에 의해서 한칸씩 아래로 밀려짐
     {
         float yOffSet = (GetBlockHeight() + block.GetBlockHeight()) * 0.5f;
@@ -347,7 +324,7 @@ public abstract class Block : MonoBehaviour, IDragHandler, IBeginDragHandler, IE
         }
     }
 
-    // ! 주의! PushUpTo 함수는 block의 위치까지 미는 것임, 즉 Disconnect되고 움직이기 전에 바로 실행되어야 함
+    // Notice: PushUpTo 함수는 block의 위치까지 미는 것임, 즉 Disconnect되고 움직이기 전에 바로 실행되어야 함
     public void PushUpTo(Block block, bool isRecursive = true)
     {
         if (isRecursive && IsBottomConnected())
@@ -374,6 +351,7 @@ public abstract class Block : MonoBehaviour, IDragHandler, IBeginDragHandler, IE
 
     protected IEnumerator MoveOnToNextBlock(Block block)
     {
+        if (GameManager.InProgress == false) yield break;
         if (block.IsNeglected()) yield break;
 
         switch (block.blockType)
@@ -542,6 +520,8 @@ public abstract class Block : MonoBehaviour, IDragHandler, IBeginDragHandler, IE
     
     public bool DraggedBlockOnTheArea(RectTransform area)
     {
+        if (area == null) return false;
+
         var draggedPosition = draggedBlock.connectionRecognitionArea;
 
         if (draggedPosition.position.x >= area.position.x - area.rect.width  * 0.5f &&
@@ -560,7 +540,7 @@ public abstract class Block : MonoBehaviour, IDragHandler, IBeginDragHandler, IE
         switch (blockType)
         {
             case BlockType.LoopBlock:
-            case BlockType.ConditionalBlock: 
+            case BlockType.ConditionalBlock:
                 return true;
         }
 
@@ -639,6 +619,7 @@ public abstract class Block : MonoBehaviour, IDragHandler, IBeginDragHandler, IE
         }
     }
 
+    // param: EventBlock을 제외한 가장 높은 부모 Block
     public void FindHighestParentBlock(out ParentBlock block)
     {
         if(HasParentBlock())
@@ -680,8 +661,10 @@ public abstract class Block : MonoBehaviour, IDragHandler, IBeginDragHandler, IE
     public void HighlighteOn(Color color) 
     {
         canvasGroup.alpha = 1;
-        outline.effectColor = color;
-        outline.effectDistance = new Vector2(1.6f, 1.6f);
+        outline.effectColor = new Color(0, 0, 0, 0.5f);
+        outline.effectDistance = new Vector2(0.9f, 0.9f);
+        //outline.effectColor = color;
+        //outline.effectDistance = new Vector2(1.6f, 1.6f);
     }
 
     public void HighlightOff()
@@ -733,8 +716,8 @@ public abstract class Block : MonoBehaviour, IDragHandler, IBeginDragHandler, IE
 
         canvasGroup.alpha = 0.6f;
         canvasGroup.blocksRaycasts = false;
-
-        Disconnect();
+        
+        if(IsEventBlock() == false) Disconnect();
 
         isDragging = true;
         draggedBlock = this;
@@ -755,7 +738,7 @@ public abstract class Block : MonoBehaviour, IDragHandler, IBeginDragHandler, IE
         canvasGroup.alpha = 1f;
         canvasGroup.blocksRaycasts = true;
 
-        Event_OnDragEnd.Invoke(this, EventArgs.Empty);
+        OnDragEnd.Invoke(this, EventArgs.Empty);
 
         isDragging = false;
         draggedBlock = null;

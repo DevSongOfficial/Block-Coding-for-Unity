@@ -21,6 +21,6 @@ public sealed class MovementXActionBlock : ActionBlock
     {
         Target.ChangePositionX(moveAmount);
         
-        yield return null;
+        yield break;
     }
 }

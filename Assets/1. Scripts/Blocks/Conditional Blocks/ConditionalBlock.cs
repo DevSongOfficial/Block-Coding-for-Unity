@@ -16,7 +16,7 @@ public abstract class ConditionalBlock : ParentBlock
         base.InitializeBlock();
 
         topConnectedBlockArea.anchoredPosition = new Vector2(0, 54f);
-        bottomConnectedBlockArea.anchoredPosition = new Vector2(0, -59f);
+        bottomConnectedBlockArea.anchoredPosition = new Vector2(0, -54f);
     }
 
     public abstract bool CheckCondition();
@@ -36,8 +36,6 @@ public abstract class ConditionalBlock : ParentBlock
                 var childBlock = childBlocks[i];
 
                 yield return StartCoroutine(MoveOnToNextBlock(childBlock));
-
-                yield return childBlock.IsNeglected() ? null : new WaitForSecondsRealtime(EXCUTION_DELAY);
             }
         }
     }

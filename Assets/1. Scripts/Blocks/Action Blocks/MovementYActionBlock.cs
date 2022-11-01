@@ -21,6 +21,6 @@ public class MovementYActionBlock : ActionBlock
     {
         Target.ChangePositionY(moveAmount);
 
-        yield return null;
+        yield break;
     }
 }

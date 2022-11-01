@@ -9,16 +9,12 @@ public class LoopBlock : ParentBlock
     private TMP_InputField inputField;
 
     private int loopTimes;
-    private float loopDelay;
-    public static readonly float Default_Loop_Delay = 0.1f;
 
     public IEnumerator LoopCoroutine;
 
     protected override void Awake()
     {
         base.Awake();
-
-        loopDelay = Default_Loop_Delay;
 
         inputField = transform.Find("InputField").GetComponent<TMP_InputField>();
         inputField.onValueChanged.AddListener(ChangeLoopTimes);
@@ -33,7 +29,7 @@ public class LoopBlock : ParentBlock
         base.InitializeBlock();
 
         topConnectedBlockArea.anchoredPosition = new Vector2(0, 54f);
-        bottomConnectedBlockArea.anchoredPosition = new Vector2(0, -59f);
+        bottomConnectedBlockArea.anchoredPosition = new Vector2(0, -54f);
     }
 
     public void ChangeLoopTimes(string times)
@@ -59,6 +55,8 @@ public class LoopBlock : ParentBlock
     {
         for(int i = 0; i < loopTimes; i++)
         {
+            if (GameManager.InProgress == false) yield break;
+
             if (IsNeglected())
             {
                 SetNeglect(false, applyToChildBlocks: true);
@@ -70,11 +68,7 @@ public class LoopBlock : ParentBlock
                 var childBlock = childBlocks[j];
 
                 yield return StartCoroutine(MoveOnToNextBlock(childBlock));
-
-                yield return childBlock.IsNeglected() ? null : new WaitForSecondsRealtime(EXCUTION_DELAY);
             }
-
-            yield return IsNeglected() ? null : new WaitForSecondsRealtime(loopDelay);
         }
     }
 

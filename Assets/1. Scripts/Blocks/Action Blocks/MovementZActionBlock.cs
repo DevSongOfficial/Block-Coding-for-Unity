@@ -20,6 +20,6 @@ public class MovementZActionBlock : ActionBlock
     {
         Target.ChangePositionZ(moveAmount);
 
-        yield return null;
+        yield break;
     }
 }

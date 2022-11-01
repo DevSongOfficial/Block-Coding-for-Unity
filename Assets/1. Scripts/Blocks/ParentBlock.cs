@@ -9,7 +9,7 @@ public abstract class ParentBlock : Block
 {
     [HideInInspector] public RectTransform middleConnectedBlockArea; // UI를 이 영역에 드랍했을 때 중앙에 붙는다고 인식한다.
 
-    [HideInInspector] public List<Block> childBlocks;
+    public List<Block> childBlocks;
 
     public float Height { get; protected set; } // ParentBlock은 Height가 유동적임
     public float Width { get; private set; } // ParentBlock은 Width가 유동적임

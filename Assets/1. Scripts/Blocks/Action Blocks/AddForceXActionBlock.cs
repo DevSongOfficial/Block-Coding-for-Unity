@@ -20,6 +20,6 @@ public class AddForceXActionBlock : ActionBlock
     {
         Target.rigidBody.AddForce(Vector3.right * forceAmount, ForceMode.Impulse);
 
-        yield return null;
+        yield break;
     }
 }

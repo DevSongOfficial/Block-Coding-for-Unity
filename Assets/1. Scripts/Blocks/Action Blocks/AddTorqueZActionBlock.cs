@@ -20,6 +20,6 @@ public class AddTorqueZActionBlock : ActionBlock
     {
         Target.rigidBody.AddTorque(Vector3.forward * forceAmount, ForceMode.Impulse);
 
-        yield return null;
+        yield break;
     }
 }
