@@ -5,7 +5,7 @@ using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using TMPro;
 
-public class PropertyPanel : MonoBehaviour, IDragHandler
+public class PropertyPanel : MonoBehaviour, IDragHandler, IPointerDownHandler
 {
     private static PropertyPanel instance;
     public static PropertyPanel Instance { get { return instance; } }
@@ -14,6 +14,7 @@ public class PropertyPanel : MonoBehaviour, IDragHandler
     private CanvasGroup canvasGroup;
 
     [SerializeField] private Button sizeChangeButton;
+    [SerializeField] private CanvasGroup otherSettingsCanvasGroup;
     [SerializeField] private Outline topPanelOutline;
 
     [SerializeField] private TMP_InputField nameInputField;
@@ -28,7 +29,7 @@ public class PropertyPanel : MonoBehaviour, IDragHandler
     [SerializeField] private TMP_InputField scaleYInputField;
     [SerializeField] private TMP_InputField scaleZInputField;
 
-
+    [SerializeField] private Slider gameViewScaleSlider;
 
     private void Awake()
     {
@@ -42,10 +43,11 @@ public class PropertyPanel : MonoBehaviour, IDragHandler
 
         GameManager.Instance.OnTargetObjectSelected += ActivatePropertyPanel;
 
-        sizeChangeButton.onClick.AddListener(ChangeSize);
+        sizeChangeButton.onClick.AddListener(OnChangeSize);
 
         nameInputField.onValueChanged.AddListener((string name) => { if (name != string.Empty) GameManager.CurrentTarget.SetName(name); });
         GameManager.Instance.OnTargetObjectSelected += (object sender, Target target) => nameInputField.text = target.Name;
+        GameManager.Instance.OnTargetObjectSelected += (object sender, Target target) => nameInputField.enabled = target == GameManager.Instance.gameCamera ? false : true;
 
         locationXInputField.onEndEdit.AddListener((string value) =>
         {
@@ -92,6 +94,8 @@ public class PropertyPanel : MonoBehaviour, IDragHandler
             float.TryParse(value, out float newValue);
             GameManager.CurrentTarget.SetScaleZ(newValue);
         });
+
+        gameViewScaleSlider.onValueChanged.AddListener((float value) => GamePanel.Instance.ScaleGamePanel(value + 0.75f)); ;
     }
 
 
@@ -134,13 +138,21 @@ public class PropertyPanel : MonoBehaviour, IDragHandler
         canvasGroup.interactable = true;
     }
 
-    public void ChangeSize()
+    public void OnChangeSize()
     {
         bool isMaxSize = canvasGroup.blocksRaycasts;
 
         canvasGroup.blocksRaycasts = !isMaxSize;
         canvasGroup.alpha = !isMaxSize ? 1 : 0;
         topPanelOutline.enabled = isMaxSize;
+
+        otherSettingsCanvasGroup.blocksRaycasts = canvasGroup.blocksRaycasts;
+        otherSettingsCanvasGroup.alpha = canvasGroup.alpha;
+    }
+
+    public void OnPointerDown(PointerEventData eventData)
+    {
+        transform.SetAsLastSibling();
     }
 
     public void OnDrag(PointerEventData eventData)

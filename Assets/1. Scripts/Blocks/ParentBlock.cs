@@ -12,9 +12,8 @@ public abstract class ParentBlock : Block
     public List<Block> childBlocks;
 
     public float Height { get; protected set; } // ParentBlock은 Height가 유동적임
-    public float Width { get; private set; } // ParentBlock은 Width가 유동적임
+    public float Width { get; protected set; } // ParentBlock은 Width가 유동적임
     public static readonly float WidthDefault = 178;
-    public static readonly int WIDTH_INCREASED_AMOUNT = 16; // ParentBlock 안에 ParentBlock이 추가될 때 늘릴 Width Amount
 
     private float childBlockAreaHeight;
 
@@ -27,14 +26,7 @@ public abstract class ParentBlock : Block
 
         childBlocks = new List<Block>();
 
-        if(IsEventBlock())
-        {
-            middleConnectedBlockArea = null;
-        }
-        else
-        {
-            middleConnectedBlockArea = transform.Find("MiddleConnectedArea").GetComponent<RectTransform>();
-        }
+        middleConnectedBlockArea = transform.Find("MiddleConnectedArea")?.GetComponent<RectTransform>();
     }
     
 
@@ -89,7 +81,7 @@ public abstract class ParentBlock : Block
         }
     }
 
-    public void OnChildBlockAdded(Block block) 
+    public virtual void OnChildBlockAdded(Block block) 
     {
         if(childBlockAreaHeight < GetChildBlocksHeight()) // 크기가 증가해야하는 경우
         {
@@ -104,7 +96,7 @@ public abstract class ParentBlock : Block
         }
     }
 
-    public void OnChildBlockRemoved(Block block)
+    public virtual void OnChildBlockRemoved(Block block)
     {
         float decreasedHeight = block.GetBlockHeight();
 
@@ -200,9 +192,9 @@ public abstract class ParentBlock : Block
         return height;
     }
 
-    public void MoveChildBlocks(Vector2 delta)
+    public virtual void MoveChildBlocks(Vector2 delta)
     {
-        for(int i = 0; i < childBlocks.Count; i++)
+        for (int i = 0; i < childBlocks.Count; i++)
         {
             var childBlock = childBlocks[i];
             childBlock.ChangeAnchoredPosition(delta);

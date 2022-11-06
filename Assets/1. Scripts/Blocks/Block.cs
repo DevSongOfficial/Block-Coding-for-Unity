@@ -23,7 +23,7 @@ public abstract class Block : MonoBehaviour, IDragHandler, IBeginDragHandler, IE
     protected RectTransform rectTransform;
     protected CanvasGroup canvasGroup;
 
-    public enum BlockType { LoopBlock, ConditionalBlock, ActionBlock, EventBlock }
+    public enum BlockType { LoopBlock, ConditionalBlock, ConditionBlock, ActionBlock, EventBlock }
     [HideInInspector] public BlockType blockType;
 
     public static List<Block> AllBlocksInTheScene = new List<Block>();
@@ -188,7 +188,7 @@ public abstract class Block : MonoBehaviour, IDragHandler, IBeginDragHandler, IE
         block.AsParentBlock()?.MoveChildBlocks(block.DeltaPosition());
     }
 
-    // This function will be called when you start dragging a block except event block.
+    // This function will be called by draggedBlock when you start dragging a block except event block.
     public void Disconnect()
     {
         if(IsBottomConnected())
@@ -210,6 +210,11 @@ public abstract class Block : MonoBehaviour, IDragHandler, IBeginDragHandler, IE
             {
                 bottomConnectedBlock?.PushUp(GetBlockHeight());
             }
+        }
+
+        if (IsConditionBlock())
+        {
+            AsConditionBlock().DisconnectFromConditionalBlock();
         }
 
         bottomConnectedBlock = null;
@@ -237,10 +242,20 @@ public abstract class Block : MonoBehaviour, IDragHandler, IBeginDragHandler, IE
             {
                 case BlockType.LoopBlock:
                     AsParentBlock().TryMiddleConnect(draggedBlock);
-                    break;
+                    return;
                 case BlockType.ConditionalBlock:
-                    AsParentBlock().TryMiddleConnect(draggedBlock);
-                    break;
+                    if (draggedBlock.IsConditionBlock()) // Check condition block connection.
+                    {
+                        if (DraggedBlockOnTheArea(AsConditionalBlock().conditionBlockArea))
+                        {
+                            AsConditionalBlock().TryConditionConnect(draggedBlock.AsConditionBlock());
+                        }
+                    }
+                    else
+                    {
+                        AsParentBlock().TryMiddleConnect(draggedBlock);
+                    }
+                    return;
             }
         }
     }
@@ -266,15 +281,19 @@ public abstract class Block : MonoBehaviour, IDragHandler, IBeginDragHandler, IE
         // 서로 다른 MainPanel의 블록끼리의 Connect됨을 방지
         if (Target.connectedMainPanel.gameObject.activeSelf == false) return false;
 
+        if (IsConditionBlock()) return false;
+
         if (DraggedBlockOnTheArea(topConnectedBlockArea) && IsTopConnected() == false)
         {
             if (IsEventBlock()) return false;
+            if (draggedBlock.IsConditionBlock()) return false;
 
             return true;
         }
         else if (DraggedBlockOnTheArea(bottomConnectedBlockArea))
         {
             if (draggedBlock.IsEventBlock()) return false;
+            if (draggedBlock.IsConditionBlock()) return false;
 
             return true;
         }
@@ -282,14 +301,28 @@ public abstract class Block : MonoBehaviour, IDragHandler, IBeginDragHandler, IE
         {
             if (draggedBlock.IsEventBlock()) return false;
             if (IsParentBlock() == false) return false;
-            if (DraggedBlockOnTheArea(AsParentBlock().middleConnectedBlockArea) == false) return false;
-            if (AsParentBlock().HasChildBlock()) return false;  // child가 하나도 없는 상태이면 MiddleConnect, 그렇지 않으면 그 child 위에 붙인 후 함께 확장
             switch (blockType) 
             {
                 case BlockType.LoopBlock:
-                    return true;                                                     
+                    if (DraggedBlockOnTheArea(AsParentBlock().middleConnectedBlockArea) == false) return false;
+                    if (AsParentBlock().HasChildBlock()) return false;  // child가 하나도 없는 상태이면 MiddleConnect, 그렇지 않으면 그 child 위에 붙인 후 함께 확장
+                    return true;                                             
+                    
                 case BlockType.ConditionalBlock:
-                    return true;
+                    if (draggedBlock.IsConditionBlock())
+                    {
+                        if (DraggedBlockOnTheArea(AsConditionalBlock().conditionBlockArea) && AsConditionalBlock().connectedConditionBlock == null)
+                        {
+                            return true;
+                        }
+                        return false;
+                    }
+                    else
+                    {
+                        if (DraggedBlockOnTheArea(AsParentBlock().middleConnectedBlockArea) == false) return false;
+                        if (AsParentBlock().HasChildBlock()) return false;  // child가 하나도 없는 상태이면 MiddleConnect, 그렇지 않으면 그 child 위에 붙인 후 함께 확장
+                        return true;
+                    }
             }
         }
 
@@ -460,6 +493,11 @@ public abstract class Block : MonoBehaviour, IDragHandler, IBeginDragHandler, IE
         rectTransform.sizeDelta = new Vector2(rectTransform.sizeDelta.x, height);
     }
 
+    public float GetRectTransformWidth()
+    {
+        return rectTransform.sizeDelta.x;
+    }
+
     public float GetRectTransformHeight()
     {
         return rectTransform.sizeDelta.y;
@@ -567,6 +605,16 @@ public abstract class Block : MonoBehaviour, IDragHandler, IBeginDragHandler, IE
         return blockType == BlockType.LoopBlock;
     }
 
+    public bool IsConditionalBlock()
+    {
+        return blockType == BlockType.ConditionalBlock;
+    }
+
+    public bool IsConditionBlock()
+    {
+        return blockType == BlockType.ConditionBlock;
+    }
+
     public virtual ParentBlock AsParentBlock()
     {
         return null;
@@ -585,6 +633,11 @@ public abstract class Block : MonoBehaviour, IDragHandler, IBeginDragHandler, IE
     }
 
     public virtual ConditionalBlock AsConditionalBlock()
+    {
+        return null;
+    }
+
+    public virtual ConditionBlock AsConditionBlock()
     {
         return null;
     }
@@ -647,6 +700,8 @@ public abstract class Block : MonoBehaviour, IDragHandler, IBeginDragHandler, IE
             {
                 AsParentBlock().childBlocks[i].DestroyBlock();
             }
+
+            AsConditionalBlock()?.connectedConditionBlock?.DestroyBlock();
         }
         
         if (IsBottomConnected())
@@ -656,6 +711,7 @@ public abstract class Block : MonoBehaviour, IDragHandler, IBeginDragHandler, IE
 
         AsEventBlock()?.OnDestroyed();
         gameObject.SetActive(false);
+        transform.SetParent(PanelManager.Current.DestroyedBlocks);
     }
     
     public void HighlighteOn(Color color) 
@@ -730,8 +786,19 @@ public abstract class Block : MonoBehaviour, IDragHandler, IBeginDragHandler, IE
 
     public virtual void OnEndDrag(PointerEventData eventData)
     {
-        if (IsParentBlock() || IsEventBlock()) transform.SetParent(PanelManager.Current.ParentBlocksPanel);
-        else transform.SetParent(PanelManager.Current.SimpleBlocksPanel);
+        switch (blockType)
+        {
+            case BlockType.EventBlock: case BlockType.ConditionalBlock: case BlockType.LoopBlock:
+                transform.SetParent(PanelManager.Current.ParentBlocksPanel);
+                break;
+            case BlockType.ActionBlock:
+                transform.SetParent(PanelManager.Current.SimpleBlocksPanel);
+                break;
+            case BlockType.ConditionBlock:
+                transform.SetParent(PanelManager.Current.ConditionBlocksPanel);
+                break;
+
+        }
 
         HighlightOff();
 

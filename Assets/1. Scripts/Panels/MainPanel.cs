@@ -29,7 +29,8 @@ public class MainPanel : MonoBehaviour
     public Transform LogicPanelScrollView { get; private set; }
     public Transform LogicPanelContent { get; private set; }
     public Transform ParentBlocksPanel { get; private set; }
-    public Transform SimpleBlocksPanel { get; private set; }
+    public Transform SimpleBlocksPanel { get; private set; } 
+    public Transform ConditionBlocksPanel { get; private set; }
 
     // DestryedBlocks: DestroyBlock() 호출 시 아래 패널로 이동시킨 뒤 비활성화
     public Transform DestroyedBlocks { get; private set; } 
@@ -45,6 +46,8 @@ public class MainPanel : MonoBehaviour
         LogicPanelContent = LogicPanelScrollView.GetChild(0).GetChild(0);
         ParentBlocksPanel = LogicPanelContent.Find("ParentBlocks");
         SimpleBlocksPanel = LogicPanelContent.Find("SimpleBlocks");
+
+        ConditionBlocksPanel = LogicPanelContent.Find("ConditionBlocks");
 
         DestroyedBlocks = transform.Find("DestroyedBlocks");
 

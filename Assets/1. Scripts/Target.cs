@@ -51,7 +51,12 @@ public class Target : MonoBehaviour, ISelectable
     {
         rigidBody = GetComponent<Rigidbody>();
         outline = GetComponent<Outline>();
+    }
+
+    private void Start()
+    {
         outline.enabled = false;
+        rigidBody.isKinematic = true;
     }
 
     public void GetSelected()

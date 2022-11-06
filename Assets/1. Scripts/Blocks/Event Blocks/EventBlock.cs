@@ -18,6 +18,12 @@ public abstract class EventBlock : ParentBlock
         blockType = BlockType.EventBlock;
     }
 
+    public override void InitializeBlock()
+    {
+        Height = HeightDefalut;
+        Width = WidthDefault;
+    }
+
     public virtual void OnCreated()
     {
         // Do nothing in this class

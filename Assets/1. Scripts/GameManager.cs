@@ -19,6 +19,7 @@ public class GameManager : MonoBehaviour
     public event EventHandler<Target> OnTargetObjectSelected;
     public event EventHandler<Target> OnNewTargetObjectCreated;
     public event EventHandler<Target> OnTargetObjectRemoved;
+    public event EventHandler OnGameStart;
 
     public static Target CurrentTarget { get; private set; } // TargetObject currently being selected.
     public static Target PreviousTarget { get; private set; }
@@ -45,6 +46,12 @@ public class GameManager : MonoBehaviour
     [HideInInspector] public Target cubePrefab;     // [1] Cube
     [HideInInspector] public Target spherePrefab;   // [2] Sphere
     [HideInInspector] public Target cylinderPrefab; // [3] Cylinder
+    
+    [HideInInspector] public Target gameCamera;
+
+    [SerializeField] private GameObject raycastBlock;
+
+    public static Light DirectionalLight { get; private set; }
 
     private void Awake()
     {
@@ -56,6 +63,9 @@ public class GameManager : MonoBehaviour
         cubePrefab = Resources.Load<Target>("Prefabs/Target_Cube");
         spherePrefab = Resources.Load<Target>("Prefabs/Target_Sphere");
         cylinderPrefab = Resources.Load<Target>("Prefabs/Target_Cylinder");
+        gameCamera = GameObject.Find("Game Camera").GetComponent<Target>();
+
+        DirectionalLight = GameObject.Find("Directional Light").GetComponent<Light>();
 
         Screen.SetResolution(1280, 720, false);
     }
@@ -63,6 +73,8 @@ public class GameManager : MonoBehaviour
     private void Start()
     {
         Block.InitializeAllBlocksInTheScene();
+
+        SetGameCamera();
     }
 
     void Update()
@@ -118,9 +130,14 @@ public class GameManager : MonoBehaviour
     {
         InProgress = true;
 
+        OnGameStart.Invoke(this, EventArgs.Empty);
+
+        raycastBlock.SetActive(true);
+
         foreach (Target target in EveryTargetInTheScene)
         {
             target.UpdateTransformBeforEventStarted();
+            target.rigidBody.isKinematic = false;
         }
 
         PanelManager.Instance.ActivateAllBlockPanels();
@@ -137,9 +154,12 @@ public class GameManager : MonoBehaviour
     {
         InProgress = false; // Loop Block and Wait Block would be stopped by the variable.
 
+        raycastBlock.SetActive(false);
+
         foreach (Target target in EveryTargetInTheScene)
         {
             target.RevertToTrasnformBeforeEventStarted();
+            target.rigidBody.isKinematic = true;
         }
     }
 
@@ -154,8 +174,15 @@ public class GameManager : MonoBehaviour
         return newTargetObject;
     }
 
+    private void SetGameCamera()
+    {
+        EveryTargetInTheScene.Add(gameCamera);
+        OnNewTargetObjectCreated.Invoke(this, gameCamera);
+    }
+
     public void RemoveTargetObject(Target target)
     {
+        if (target.gameObject.name == "Game Camera") return;
         if (target == null) return;
 
         EveryTargetInTheScene.Remove(target);

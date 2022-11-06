@@ -137,6 +137,8 @@ public class ScenePanel : MonoBehaviour, IDropHandler
                 CameraMover.transform.Translate(upDirection * -moveCoefficient * Time.deltaTime);
             }
 
+            SetCursorPos((int)mousePosition.x, (int)mousePosition.y);
+
             yield return null;
         }
 
@@ -154,7 +156,6 @@ public class ScenePanel : MonoBehaviour, IDropHandler
     public void OnDrop(PointerEventData eventData)
     {
         if (Block.draggedBlock == null) return;
-        Block.draggedBlock.transform.SetParent(PanelManager.Current.DestroyedBlocks);
         Block.draggedBlock.DestroyBlock();
     }
 }
