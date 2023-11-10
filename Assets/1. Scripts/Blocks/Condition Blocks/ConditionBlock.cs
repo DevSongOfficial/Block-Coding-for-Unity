@@ -4,7 +4,7 @@ using UnityEngine;
 
 public abstract class ConditionBlock : Block
 {
-    [HideInInspector] public ConditionalBlock connectedConditionalBlock;
+    [HideInInspector] public IfConditionalBlock connectedConditionalBlock;
 
     public static readonly float WidthDefault = 100;
 
@@ -18,6 +18,11 @@ public abstract class ConditionBlock : Block
     public void DisconnectFromConditionalBlock()
     {
         connectedConditionalBlock?.OnDisconnectedFromConditionBlock();
+    }
+
+    public bool IsConnected()
+    {
+        return connectedConditionalBlock != null;
     }
 
     public abstract bool IsConditionTrue();

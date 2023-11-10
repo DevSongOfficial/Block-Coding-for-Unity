@@ -4,19 +4,13 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 
-public sealed class ConditionalBlock : ParentBlock
+public abstract class ConditionalBlock : ParentBlock
 {
-    [HideInInspector] public RectTransform conditionBlockArea;
-
-    public ConditionBlock connectedConditionBlock;
-
     protected override void Awake()
     {
         base.Awake();
 
         blockType = BlockType.ConditionalBlock;
-
-        conditionBlockArea = transform.Find("ConditionConnectedArea").GetComponent<RectTransform>();
     }
 
     public override void InitializeBlock()
@@ -27,38 +21,7 @@ public sealed class ConditionalBlock : ParentBlock
         bottomConnectedBlockArea.anchoredPosition = new Vector2(0, -54f);
     }
 
-    public void TryConditionConnect(ConditionBlock conditionBlock)
-    {
-        if (connectedConditionBlock != null) return;
-        if (conditionBlock.connectedConditionalBlock != null) return;
-
-        connectedConditionBlock = conditionBlock;
-        conditionBlock.connectedConditionalBlock = this;
-
-        float xOffset = (conditionBlock.GetRectTransformWidth() - ConditionBlock.WidthDefault) * 0.5f;
-        float yOffset = (HeightDefalut - Height) * -0.5f;
-        var newPosition = AsConditionalBlock().conditionBlockArea.anchoredPosition + AsConditionalBlock().GetAnchoredPosition() + new Vector2(xOffset, yOffset);
-        conditionBlock.SetAnchoredPosition(newPosition);
-    }
-
-    public void OnDisconnectedFromConditionBlock()
-    {
-        connectedConditionBlock.connectedConditionalBlock = null;
-
-        float difference = connectedConditionBlock.GetRectTransformWidth() - ConditionBlock.WidthDefault;
-
-        connectedConditionBlock = null;
-    }
-
-    public bool CheckCondition()
-    {
-        if(connectedConditionBlock == null)
-        {
-            return false;
-        }
-
-        return connectedConditionBlock.IsConditionTrue();
-    }
+    public abstract bool CheckCondition();
 
     public IEnumerator ConditionalFunctionsRoutine()
     {
@@ -77,17 +40,6 @@ public sealed class ConditionalBlock : ParentBlock
                 yield return StartCoroutine(MoveOnToNextBlock(childBlock));
             }
         }
-    }
-
-    public override void MoveChildBlocks(Vector2 delta)
-    {
-        if (connectedConditionBlock != null)
-        {
-            AsConditionalBlock().connectedConditionBlock.ChangeAnchoredPosition(delta);
-            
-        }
-
-        base.MoveChildBlocks(delta);
     }
 
     public override ConditionalBlock AsConditionalBlock()

@@ -18,7 +18,7 @@ public class AddForceYActionBlock : ActionBlock
 
     public override IEnumerator DoFunction()
     {
-        Target.rigidBody.AddForce(Vector3.up * forceAmount, ForceMode.Impulse);
+        Target.RigidBody.AddForce(Vector3.up * forceAmount, ForceMode.Impulse);
 
         yield break;
     }

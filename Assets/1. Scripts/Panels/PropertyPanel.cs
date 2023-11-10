@@ -1,4 +1,4 @@
-using System.Collections;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -13,12 +13,13 @@ public class PropertyPanel : MonoBehaviour, IDragHandler, IPointerDownHandler
     private RectTransform rectTransform;
     private CanvasGroup canvasGroup;
 
+    [Header("Top Panel")]
     [SerializeField] private Button sizeChangeButton;
-    [SerializeField] private CanvasGroup otherSettingsCanvasGroup;
     [SerializeField] private Outline topPanelOutline;
 
     [SerializeField] private TMP_InputField nameInputField;
 
+    [Header("Transform Panel")]
     [SerializeField] private TMP_InputField locationXInputField;
     [SerializeField] private TMP_InputField locationYInputField;
     [SerializeField] private TMP_InputField locationZInputField;
@@ -29,7 +30,16 @@ public class PropertyPanel : MonoBehaviour, IDragHandler, IPointerDownHandler
     [SerializeField] private TMP_InputField scaleYInputField;
     [SerializeField] private TMP_InputField scaleZInputField;
 
+
+    [Header("Other Settings Panel")]
+    [SerializeField] private CanvasGroup otherSettingsCanvasGroup;
     [SerializeField] private Slider gameViewScaleSlider;
+
+    [Header("Physics Panel")]
+    [SerializeField] private Toggle ignoreCollisionToggle;
+    [SerializeField] private Toggle useGravityToggle;
+    [SerializeField] private TMP_InputField massInputField;
+    [SerializeField] private TMP_InputField dragInputField;
 
     private void Awake()
     {
@@ -41,13 +51,13 @@ public class PropertyPanel : MonoBehaviour, IDragHandler, IPointerDownHandler
         GameManager.Instance.OnTargetObjectRemoved += InitializeEveryText;
         GameManager.Instance.OnTargetObjectRemoved += DeactivatePropertyPanel;
 
-        GameManager.Instance.OnTargetObjectSelected += ActivatePropertyPanel;
+        GameManager.Instance.OnTargetObjectSelected += ActivateAndInitializePropertyPanel;
+
+        GameManager.Instance.OnGameStop += UpdateTransformPanel;
 
         sizeChangeButton.onClick.AddListener(OnChangeSize);
 
         nameInputField.onValueChanged.AddListener((string name) => { if (name != string.Empty) GameManager.CurrentTarget.SetName(name); });
-        GameManager.Instance.OnTargetObjectSelected += (object sender, Target target) => nameInputField.text = target.Name;
-        GameManager.Instance.OnTargetObjectSelected += (object sender, Target target) => nameInputField.enabled = target == GameManager.Instance.gameCamera ? false : true;
 
         locationXInputField.onEndEdit.AddListener((string value) =>
         {
@@ -95,9 +105,37 @@ public class PropertyPanel : MonoBehaviour, IDragHandler, IPointerDownHandler
             GameManager.CurrentTarget.SetScaleZ(newValue);
         });
 
-        gameViewScaleSlider.onValueChanged.AddListener((float value) => GamePanel.Instance.ScaleGamePanel(value + 0.75f)); ;
+        gameViewScaleSlider.onValueChanged.AddListener((float value) => GamePanel.Instance.ScaleGamePanel(value + 0.75f));
+
+        ignoreCollisionToggle.onValueChanged.AddListener((bool value) => GameManager.CurrentTarget.Collider.enabled = !value);
+        useGravityToggle.onValueChanged.AddListener((bool value) => GameManager.CurrentTarget.RigidBody.useGravity = value);
+        massInputField.onEndEdit.AddListener((string value) =>
+        {
+            float.TryParse(value, out float newValue);
+            GameManager.CurrentTarget.RigidBody.mass = newValue;
+        });
+        dragInputField.onEndEdit.AddListener((string value) =>
+        {
+            float.TryParse(value, out float newValue);
+            GameManager.CurrentTarget.RigidBody.drag = newValue;
+        });
     }
 
+    private void Update()
+    {
+        if (GameManager.InProgress && GameManager.CurrentTarget != null)
+        {
+            UpdateTransformPanel(GameManager.CurrentTarget.transform);
+        }
+    }
+
+    private void UpdateTransformPanel(object o, EventArgs e)
+    {
+        if(GameManager.CurrentTarget != null)
+        {
+            UpdateTransformPanel(GameManager.CurrentTarget.transform);
+        }
+    }
 
     public void UpdateTransformPanel(Transform newTransform)
     {
@@ -133,9 +171,16 @@ public class PropertyPanel : MonoBehaviour, IDragHandler, IPointerDownHandler
         canvasGroup.interactable = false;
     }
 
-    public void ActivatePropertyPanel(object sender, Target target)
+    public void ActivateAndInitializePropertyPanel(object sender, Target target)
     {
         canvasGroup.interactable = true;
+
+        nameInputField.text = target.Name;
+        nameInputField.enabled = target == GameManager.Instance.gameCamera ? false : true;
+
+        ignoreCollisionToggle.isOn = !target.Collider.enabled;
+        massInputField.text = target.RigidBody.mass.ToString();
+        dragInputField.text = target.RigidBody.drag.ToString();
     }
 
     public void OnChangeSize()

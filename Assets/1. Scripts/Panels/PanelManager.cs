@@ -35,7 +35,7 @@ public class PanelManager : MonoBehaviour
     {
         #region 초기값 설정을 위해 잠시 생성했다가 파괴, (PanelManager보다 GameManager가 먼저 실행되기때문에 생긴 코드, 수정 바람)
         var targetObject = GameManager.Instance.CreateNewTargetObject(GameManager.Instance.cubePrefab);
-        mainPanelList.Add(targetObject.connectedMainPanel);
+        mainPanelList.Add(targetObject.ConnectedMainPanel);
         currentMainPanel = mainPanelList[0];
         currentMainPanel.gameObject.SetActive(true);
         GameManager.Instance.SetCurrentTarget(targetObject);

@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 6114000304316070430}
   - component: {fileID: 6114000304316070431}
   - component: {fileID: -1972183946192388635}
+  - component: {fileID: 3161814659377921878}
   - component: {fileID: 6114000304316070424}
   - component: {fileID: -3522234140411552532}
   - component: {fileID: 7548829022678625134}
@@ -101,9 +102,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   <Name>k__BackingField: Cylinder
   iconSprite: {fileID: 21300000, guid: af41c298c1f0a804f8d5182978b59fee, type: 3}
-  connectedMainPanel: {fileID: 0}
-  rigidBody: {fileID: 0}
---- !u!136 &6114000304316070424
+  <Collider>k__BackingField: {fileID: 3161814659377921878}
+--- !u!136 &3161814659377921878
 CapsuleCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -112,6 +112,20 @@ CapsuleCollider:
   m_GameObject: {fileID: 6114000304316070425}
   m_Material: {fileID: 0}
   m_IsTrigger: 0
+  m_Enabled: 1
+  m_Radius: 0.5000001
+  m_Height: 2
+  m_Direction: 1
+  m_Center: {x: 0.000000059604645, y: 0, z: -0.00000008940697}
+--- !u!136 &6114000304316070424
+CapsuleCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6114000304316070425}
+  m_Material: {fileID: 0}
+  m_IsTrigger: 1
   m_Enabled: 1
   m_Radius: 0.5000001
   m_Height: 2

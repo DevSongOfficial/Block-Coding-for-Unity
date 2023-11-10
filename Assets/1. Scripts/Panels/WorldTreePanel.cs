@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 public class WorldTreePanel : MonoBehaviour
@@ -34,5 +35,11 @@ public class WorldTreePanel : MonoBehaviour
         TapButton newTapButton = Instantiate(tapButtonPrefab, Content);
         newTapButton.SetTargetAndInitialize(target);
         tapButtonsInWorldTree.Add(newTapButton);
+    }
+
+    public void OnDrop(PointerEventData eventData)
+    {
+        if (Block.draggedBlock == null) return;
+        Block.draggedBlock.DestroyBlock();
     }
 }

@@ -235,6 +235,36 @@ public abstract class ParentBlock : Block
         return this;
     }
 
+    public override void BlockSettingOnDragStart()
+    {
+        canvasGroup.alpha = 0.6f;
+        canvasGroup.blocksRaycasts = false;
+
+        if (HasChildBlock())
+        {
+            for(int i = 0; i < childBlocks.Count; i++)
+            {
+                var childBlock = childBlocks[i];
+                childBlock.BlockSettingOnDragStart();
+            }
+        }
+    }
+
+    public override void BlockSettingOnDragEnd()
+    {
+        canvasGroup.alpha = 1f;
+        canvasGroup.blocksRaycasts = true;
+
+        if (HasChildBlock())
+        {
+            for (int i = 0; i < childBlocks.Count; i++)
+            {
+                var childBlock = childBlocks[i];
+                childBlock.BlockSettingOnDragEnd();
+            }
+        }
+    }
+
     public override void OnBeginDrag(PointerEventData eventData)
     {
         base.OnBeginDrag(eventData);

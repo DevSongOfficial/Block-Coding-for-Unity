@@ -18,7 +18,7 @@ public class AddTorqueXActionBlock : ActionBlock
 
     public override IEnumerator DoFunction()
     {
-        Target.rigidBody.AddTorque(Vector3.right * forceAmount, ForceMode.Impulse);
+        Target.RigidBody.AddTorque(Vector3.right * forceAmount, ForceMode.Impulse);
 
         yield break;
     }

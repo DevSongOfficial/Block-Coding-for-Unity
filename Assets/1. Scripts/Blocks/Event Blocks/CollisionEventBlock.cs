@@ -55,7 +55,7 @@ public sealed class CollisionEventBlock : EventBlock
         Target.OnCollisionEnterBetween += OnCollisionEnterBetween;
     }
 
-    private void OnCollisionEnterBetween(object sender, Target collider)
+    private void OnCollisionEnterBetween(object myTarget, Target collider)
     {
         if (GameManager.InProgress)
         {

@@ -18,16 +18,18 @@ public class Target : MonoBehaviour, ISelectable
     public Sprite iconSprite;
 
     // 외부 접근 용
-    [HideInInspector] public MainPanel connectedMainPanel;
-    [HideInInspector] public Rigidbody rigidBody;
+    [HideInInspector] public MainPanel ConnectedMainPanel { get; private set; }
+    [HideInInspector] public Rigidbody RigidBody { get; private set; }
+    [field: SerializeField] public Collider Collider { get; private set; } // trigger용 collider가 아닌 collsion용 collider를 할당
 
     private Outline outline;
 
     // Custom events
     public event EventHandler OnTargetNameChanged;
     public event EventHandler<Target> OnCollisionEnterBetween;
+    public event EventHandler<Target> OnCollisionExitBetween;
     
-    Transform transformBeforEventStarted;
+    private Transform transformBeforEventStarted;
     public struct Transform
     {
         public Vector3 position;
@@ -49,28 +51,28 @@ public class Target : MonoBehaviour, ISelectable
 
     private void Awake()
     {
-        rigidBody = GetComponent<Rigidbody>();
+        RigidBody = GetComponent<Rigidbody>();
         outline = GetComponent<Outline>();
     }
 
     private void Start()
     {
         outline.enabled = false;
-        rigidBody.isKinematic = true;
+        RigidBody.isKinematic = true;
     }
 
     public void GetSelected()
     {
         PropertyPanel.Instance.UpdateTransformPanel(transform);
 
-        PanelManager.Instance.DeactivateAllBlockPanels();
-        connectedMainPanel.gameObject.SetActive(true);
-        PanelManager.Instance.SetCurrentMainPanel(connectedMainPanel);
+        if(!GameManager.InProgress) PanelManager.Instance.DeactivateAllBlockPanels();
+        ConnectedMainPanel.gameObject.SetActive(true);
+        PanelManager.Instance.SetCurrentMainPanel(ConnectedMainPanel);
     }
 
     public void SetConnectedMainPanel(MainPanel mainPanel)
     {
-        connectedMainPanel = mainPanel;
+        ConnectedMainPanel = mainPanel;
     }
 
     public void ChangeActivation()
@@ -88,12 +90,21 @@ public class Target : MonoBehaviour, ISelectable
         outline.enabled = false;
     }
 
-    public void OnCollisionEnter(Collision collision)
+    private void OnTriggerEnter(Collider other)
     {
-        var collisionTaret = collision.gameObject.GetComponent<Target>();
+        var collisionTaret = other.gameObject.GetComponent<Target>();
         if (collisionTaret != null)
         {
             OnCollisionEnterBetween?.Invoke(this, collisionTaret);
+        }
+    }
+
+    private void OnTriggerExit(Collider other)
+    {
+        var collisionTaret = other.gameObject.GetComponent<Target>();
+        if (collisionTaret != null)
+        {
+            OnCollisionExitBetween?.Invoke(this, collisionTaret);
         }
     }
 

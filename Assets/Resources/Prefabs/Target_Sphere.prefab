@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 6020663578725408255}
   - component: {fileID: 2221110600103800530}
   - component: {fileID: 4391337231565737294}
+  - component: {fileID: 6379885797939209987}
   - component: {fileID: 6727278449345034591}
   - component: {fileID: 8468352303781301887}
   m_Layer: 0
@@ -101,8 +102,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   <Name>k__BackingField: Sphere
   iconSprite: {fileID: 21300000, guid: d2879c7602385ee48870c63961709461, type: 3}
-  connectedMainPanel: {fileID: 0}
-  rigidBody: {fileID: 0}
+  <Collider>k__BackingField: {fileID: 4391337231565737294}
 --- !u!135 &4391337231565737294
 SphereCollider:
   m_ObjectHideFlags: 0
@@ -112,6 +112,19 @@ SphereCollider:
   m_GameObject: {fileID: 4939788653703917644}
   m_Material: {fileID: 0}
   m_IsTrigger: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Radius: 0.5
+  m_Center: {x: 0, y: 0, z: 0}
+--- !u!135 &6379885797939209987
+SphereCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4939788653703917644}
+  m_Material: {fileID: 0}
+  m_IsTrigger: 1
   m_Enabled: 1
   serializedVersion: 2
   m_Radius: 0.5

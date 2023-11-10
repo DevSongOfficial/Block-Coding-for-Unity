@@ -12,7 +12,7 @@ public class ScenePanel : MonoBehaviour, IDropHandler
     private static ScenePanel instance;
     public static ScenePanel Instance { get { return instance; } }
 
-    private RectTransform rectTransform;
+    [HideInInspector] public RectTransform rectTransform;
 
     public static Camera FieldCamera { get; private set; }
     public static Transform CameraMover { get; private set; }
@@ -74,7 +74,7 @@ public class ScenePanel : MonoBehaviour, IDropHandler
     }
 
     MousePosition mousePosition;
-    private float rotateSpeed = 150;
+    private float rotateSpeed = 220;
     private float xRotate;
     private float yRotate;
 
@@ -110,7 +110,7 @@ public class ScenePanel : MonoBehaviour, IDropHandler
             Vector3 rightDirection = FieldCamera.transform.localRotation * Vector3.right;
             Vector3 upDirection = FieldCamera.transform.localRotation * Vector3.up;
 
-            float moveCoefficient = Input.GetKey(KeyCode.LeftShift) ? 20f : 7.5f;
+            float moveCoefficient = Input.GetKey(KeyCode.LeftShift) ? 25f : 12.5f;
             
             if (Input.GetKey(KeyCode.W))
             {

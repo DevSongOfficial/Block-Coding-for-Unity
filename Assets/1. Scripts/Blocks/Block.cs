@@ -164,7 +164,7 @@ public abstract class Block : MonoBehaviour, IDragHandler, IBeginDragHandler, IE
             block.SetBottomConnectedBlock(bottomConnectedBlock);
             
             float yOffSet = (GetBlockHeight() + block.GetBlockHeight()) * 0.5f;
-            Vector2 newPosition = new Vector2(GetAnchoredPositionX(), GetAnchoredPositionY() - yOffSet);
+            var newPosition = new Vector2(GetAnchoredPositionX(), GetAnchoredPositionY() - yOffSet);
             block.SetAnchoredPosition(newPosition);
 
             block.bottomConnectedBlock.PushDownBy(block);
@@ -172,7 +172,7 @@ public abstract class Block : MonoBehaviour, IDragHandler, IBeginDragHandler, IE
         else
         {
             float yOffSet = (GetBlockHeight() + block.GetBlockHeight()) * 0.5f;
-            Vector2 newPosition = new Vector2(GetAnchoredPositionX(), GetAnchoredPositionY() - yOffSet);
+            var newPosition = new Vector2(GetAnchoredPositionX(), GetAnchoredPositionY() - yOffSet);
             block.SetAnchoredPosition(newPosition);
         }
 
@@ -186,6 +186,44 @@ public abstract class Block : MonoBehaviour, IDragHandler, IBeginDragHandler, IE
         }
 
         block.AsParentBlock()?.MoveChildBlocks(block.DeltaPosition());
+    }
+
+    // !주의! 이 함수는 일반적인 Drag&Drop을 통한 연결이 아닌 강제 연결을 할 때만 호출할 것.
+    // attachedBlock을 targetBlock의 아래로 강제로 붙임.
+    // TODO: BlockConnectionManager클래스를 하나 만들어서 연결 관련 함수들 다 정리하기
+    public static void BottomConnect(Block attachedBlock, Block targetBlock)
+    {
+        // block = attachedBlock
+        // this = targetBlock
+
+        if (targetBlock.IsBottomConnected())
+        {
+            targetBlock.bottomConnectedBlock.SetTopConnectedBlock(attachedBlock);
+            attachedBlock.SetBottomConnectedBlock(targetBlock.bottomConnectedBlock);
+
+            float yOffset = (targetBlock.GetBlockHeight() + attachedBlock.GetBlockHeight()) * 0.5f;
+            var newPosition = new Vector2(targetBlock.GetAnchoredPositionX(), targetBlock.GetAnchoredPositionY() - yOffset);
+            attachedBlock.SetAnchoredPosition(newPosition);
+
+            attachedBlock.bottomConnectedBlock.PushDownBy(attachedBlock);
+        }
+        else
+        {
+            float yOffset = (targetBlock.GetBlockHeight() + attachedBlock.GetBlockHeight()) * 0.5f;
+            var newPosition = new Vector2(targetBlock.GetAnchoredPositionX(), targetBlock.GetAnchoredPositionY() - yOffset);
+            attachedBlock.SetAnchoredPosition(newPosition);
+        }
+
+        targetBlock.SetBottomConnectedBlock(attachedBlock);
+
+        attachedBlock.SetTopConnectedBlock(targetBlock);
+
+        if (targetBlock.HasParentBlock())
+        {
+            targetBlock.parentBlock.AddChildBlock(attachedBlock, targetBlock.GetIndexFromParent() + 1);
+        }
+
+        attachedBlock.AsParentBlock()?.MoveChildBlocks(attachedBlock.DeltaPosition());
     }
 
     // This function will be called by draggedBlock when you start dragging a block except event block.
@@ -246,9 +284,9 @@ public abstract class Block : MonoBehaviour, IDragHandler, IBeginDragHandler, IE
                 case BlockType.ConditionalBlock:
                     if (draggedBlock.IsConditionBlock()) // Check condition block connection.
                     {
-                        if (DraggedBlockOnTheArea(AsConditionalBlock().conditionBlockArea))
+                        if (DraggedBlockOnTheArea(AsIfConditionalBlock().conditionBlockArea))
                         {
-                            AsConditionalBlock().TryConditionConnect(draggedBlock.AsConditionBlock());
+                            AsIfConditionalBlock().TryConditionConnect(draggedBlock.AsConditionBlock());
                         }
                     }
                     else
@@ -279,7 +317,7 @@ public abstract class Block : MonoBehaviour, IDragHandler, IBeginDragHandler, IE
         }
 
         // 서로 다른 MainPanel의 블록끼리의 Connect됨을 방지
-        if (Target.connectedMainPanel.gameObject.activeSelf == false) return false;
+        if (Target.ConnectedMainPanel.gameObject.activeSelf == false) return false;
 
         if (IsConditionBlock()) return false;
 
@@ -311,7 +349,7 @@ public abstract class Block : MonoBehaviour, IDragHandler, IBeginDragHandler, IE
                 case BlockType.ConditionalBlock:
                     if (draggedBlock.IsConditionBlock())
                     {
-                        if (DraggedBlockOnTheArea(AsConditionalBlock().conditionBlockArea) && AsConditionalBlock().connectedConditionBlock == null)
+                        if (DraggedBlockOnTheArea(AsIfConditionalBlock()?.conditionBlockArea) && AsIfConditionalBlock()?.connectedConditionBlock == null)
                         {
                             return true;
                         }
@@ -637,6 +675,11 @@ public abstract class Block : MonoBehaviour, IDragHandler, IBeginDragHandler, IE
         return null;
     }
 
+    public virtual IfConditionalBlock AsIfConditionalBlock()
+    {
+        return null;
+    }
+
     public virtual ConditionBlock AsConditionBlock()
     {
         return null;
@@ -701,7 +744,7 @@ public abstract class Block : MonoBehaviour, IDragHandler, IBeginDragHandler, IE
                 AsParentBlock().childBlocks[i].DestroyBlock();
             }
 
-            AsConditionalBlock()?.connectedConditionBlock?.DestroyBlock();
+            AsIfConditionalBlock()?.connectedConditionBlock?.DestroyBlock();
         }
         
         if (IsBottomConnected())
@@ -730,6 +773,18 @@ public abstract class Block : MonoBehaviour, IDragHandler, IBeginDragHandler, IE
         outline.effectDistance = new Vector2(0.9f, 0.9f);
     }
 
+    public virtual void BlockSettingOnDragStart()
+    {
+        canvasGroup.alpha = 0.6f;
+        canvasGroup.blocksRaycasts = false;
+    }
+
+    public virtual void BlockSettingOnDragEnd()
+    {
+        canvasGroup.alpha = 1f;
+        canvasGroup.blocksRaycasts = true;
+    }
+
     // LeftControl키를 누른 채로 드래그 하면 
     // 이 함수를 통해 아래 연결된 모든 블록이 함께 이동
     // 이와 관련해 Disconnect되는 것과
@@ -751,7 +806,7 @@ public abstract class Block : MonoBehaviour, IDragHandler, IBeginDragHandler, IE
     }
 
     // 자신을 복사하여 생성
-    public void CreateNewBlockOnBlockPanel()
+    public virtual void CreateNewBlockOnBlockPanel()
     {
         var newBlock = Instantiate(this, PanelManager.Current.BlockPanelContent);
         newBlock.SetTarget(Target);
@@ -770,10 +825,10 @@ public abstract class Block : MonoBehaviour, IDragHandler, IBeginDragHandler, IE
 
         transform.SetParent(PanelManager.Instance.transform);
 
-        canvasGroup.alpha = 0.6f;
-        canvasGroup.blocksRaycasts = false;
-        
-        if(IsEventBlock() == false) Disconnect();
+        BlockSettingOnDragStart();
+
+
+        if (IsEventBlock() == false) Disconnect();
 
         isDragging = true;
         draggedBlock = this;
@@ -802,8 +857,7 @@ public abstract class Block : MonoBehaviour, IDragHandler, IBeginDragHandler, IE
 
         HighlightOff();
 
-        canvasGroup.alpha = 1f;
-        canvasGroup.blocksRaycasts = true;
+        BlockSettingOnDragEnd();
 
         OnDragEnd.Invoke(this, EventArgs.Empty);
 

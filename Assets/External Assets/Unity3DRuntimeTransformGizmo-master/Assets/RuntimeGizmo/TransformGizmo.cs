@@ -130,6 +130,7 @@ namespace RuntimeGizmos
 
 		private static TransformGizmo instance;
 		public static TransformGizmo Instance { get { return instance; } }
+		public Transform targetTransform;
 
 		void Awake()
 		{
@@ -164,25 +165,29 @@ namespace RuntimeGizmos
 			ClearAllHighlightedRenderers();
 		}
 
+
 		void Update()
-		{
+        {
 			HandleUndoRedo();
 
 			SetSpaceAndType();
 
-			if(manuallyHandleGizmo)
+			if (manuallyHandleGizmo)
 			{
-				if(onCheckForSelectedAxis != null) onCheckForSelectedAxis();
-			}else{
+				if (onCheckForSelectedAxis != null) onCheckForSelectedAxis();
+			}
+			else
+			{
 				SetNearAxis();
 			}
-			
+
 			GetTarget();
 
-			if(mainTargetRoot == null) return;
-			
+			if (mainTargetRoot == null) return;
+
 			TransformSelected();
 		}
+	
 
 		void LateUpdate()
 		{
@@ -668,6 +673,8 @@ namespace RuntimeGizmos
 		{
 			if(nearAxis == Axis.None && Input.GetMouseButtonDown(0))
 			{
+				if (!Block.MousePointOnTheArea(ScenePanel.Instance.rectTransform, externalCall: true)) return;
+
 				bool isAdding = Input.GetKey(AddSelection);
 				bool isRemoving = Input.GetKey(RemoveSelection);
 
@@ -737,6 +744,8 @@ namespace RuntimeGizmos
 				// AddTargetHighlightedRenderers(target);
 
 				SetPivotPoint();
+
+				targetTransform = target;
 			}
 		}
 
@@ -752,6 +761,8 @@ namespace RuntimeGizmos
 				RemoveTargetRoot(target);
 
 				SetPivotPoint();
+
+				targetTransform = null;
 			}
 		}
 

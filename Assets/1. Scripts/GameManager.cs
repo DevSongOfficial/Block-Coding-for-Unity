@@ -20,11 +20,14 @@ public class GameManager : MonoBehaviour
     public event EventHandler<Target> OnNewTargetObjectCreated;
     public event EventHandler<Target> OnTargetObjectRemoved;
     public event EventHandler OnGameStart;
+    public event EventHandler OnGameStop;
 
     public static Target CurrentTarget { get; private set; } // TargetObject currently being selected.
     public static Target PreviousTarget { get; private set; }
     public void SetCurrentTarget(Target targetObject)
     {
+        if (targetObject == CurrentTarget) return;
+        
         PreviousTarget = CurrentTarget;
 
         if (PreviousTarget != null)
@@ -85,7 +88,7 @@ public class GameManager : MonoBehaviour
 
     private void HandleObjectSelection()
     {
-        if (Input.GetMouseButtonDown(0))
+        if (Input.GetMouseButtonDown(0) && Block.MousePointOnTheArea(ScenePanel.Instance.rectTransform, externalCall: true))
         {
             RaycastHit hit;
             Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
@@ -93,7 +96,8 @@ public class GameManager : MonoBehaviour
 
             if (hit.collider != null && hit.collider.GetComponent<ISelectable>() != null)
             {
-                SetCurrentTarget(hit.transform.GetComponent<Target>());
+                var newTarget = hit.transform.GetComponent<Target>();
+                SetCurrentTarget(newTarget);
             }
         }
     }
@@ -137,7 +141,7 @@ public class GameManager : MonoBehaviour
         foreach (Target target in EveryTargetInTheScene)
         {
             target.UpdateTransformBeforEventStarted();
-            target.rigidBody.isKinematic = false;
+            target.RigidBody.isKinematic = false;
         }
 
         PanelManager.Instance.ActivateAllBlockPanels();
@@ -156,11 +160,14 @@ public class GameManager : MonoBehaviour
 
         raycastBlock.SetActive(false);
 
+        // Initialize positions of targets in the scene;
         foreach (Target target in EveryTargetInTheScene)
         {
             target.RevertToTrasnformBeforeEventStarted();
-            target.rigidBody.isKinematic = true;
+            target.RigidBody.isKinematic = true;
         }
+
+        OnGameStop.Invoke(this, EventArgs.Empty);
     }
 
     public Target CreateNewTargetObject(Target targetPrefab)

@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 5245457764324351600}
   - component: {fileID: 5245457764324351607}
   - component: {fileID: 5245457764324351603}
+  - component: {fileID: 4439495273696102014}
   - component: {fileID: 6791601104816497751}
   - component: {fileID: 5848774816690456378}
   m_Layer: 0
@@ -101,8 +102,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   <Name>k__BackingField: Cube
   iconSprite: {fileID: 21300000, guid: b715c732e571d754ea40dc88de9b3641, type: 3}
-  connectedMainPanel: {fileID: 0}
-  rigidBody: {fileID: 0}
+  <Collider>k__BackingField: {fileID: 5245457764324351603}
 --- !u!65 &5245457764324351603
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -112,6 +112,19 @@ BoxCollider:
   m_GameObject: {fileID: 5245457764324351602}
   m_Material: {fileID: 0}
   m_IsTrigger: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Size: {x: 1, y: 1, z: 1}
+  m_Center: {x: 0, y: 0, z: 0}
+--- !u!65 &4439495273696102014
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5245457764324351602}
+  m_Material: {fileID: 0}
+  m_IsTrigger: 1
   m_Enabled: 1
   serializedVersion: 2
   m_Size: {x: 1, y: 1, z: 1}
